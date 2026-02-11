@@ -228,6 +228,9 @@ class WidgetList():
 			TCP socket to RedPitaya; can be set later via set_socket.
 		"""
 		self.socket = socket
+		# Server capability ("phasemeter" or "laser_lock"). Default to reduced
+		# phasemeter mode until the server explicitly advertises laser_lock.
+		self._server_variant = rpc.RP_CAP_PHASEMETER
 		self.auto_pll_open_flag_0=0
 		self.auto_pll_open_flag_1=0
 		self.data_write_flag=0 
@@ -372,6 +375,18 @@ class WidgetList():
 		self.setInitialValues(os.path.join(os.path.dirname(__file__), 'config.json'))
 		self.connectFunctions()
 		self._update_data_logger_ui_enabled()
+
+	def set_server_variant(self, variant: str) -> None:
+		"""
+		Set server capability variant for mode-dependent logging behavior.
+
+		Parameters
+		----------
+		variant : str
+			Either rp_protocol.RP_CAP_PHASEMETER or rp_protocol.RP_CAP_LASER_LOCK.
+		"""
+		if variant in (rpc.RP_CAP_PHASEMETER, rpc.RP_CAP_LASER_LOCK):
+			self._server_variant = variant
 
 	def _selected_data_logger_channels_from_ui(self):
 		"""Return selected channels (0/1) from Data Logger checkboxes."""
@@ -818,13 +833,19 @@ class WidgetList():
 
 	def _data_dump_columns(self, dataset):
 		"""Return ordered (label, value, channel) tuples for a data dump row."""
-		return [
+		base = [
 			("PIR_0", dataset.pir[0], 0),
 			("PIR_1", dataset.pir[1], 1),
 			("Q_0", dataset.q[0], 0),
 			("Q_1", dataset.q[1], 1),
 			("I_0", dataset.i[0], 0),
-			("I-1", dataset.i[1], 1),
+			("I_1", dataset.i[1], 1),
+		]
+		# Phasemeter mode logs only the readout columns.
+		if self._server_variant == rpc.RP_CAP_PHASEMETER:
+			return base
+		# Laser-lock mode logs full readout + control/aux columns.
+		return base + [
 			("Piezo_0", dataset.piezo[0], 0),
 			("Piezo_1", dataset.piezo[1], 1),
 			("Temperature_0", dataset.temp[0], 0),
@@ -835,13 +856,19 @@ class WidgetList():
 
 	def _data_dump_labels(self):
 		"""Return ordered (label, channel) tuples for a data dump header."""
-		return [
+		base = [
 			("PIR_0", 0),
 			("PIR_1", 1),
 			("Q_0", 0),
 			("Q_1", 1),
 			("I_0", 0),
-			("I-1", 1),
+			("I_1", 1),
+		]
+		# Phasemeter mode logs only the readout columns.
+		if self._server_variant == rpc.RP_CAP_PHASEMETER:
+			return base
+		# Laser-lock mode logs full readout + control/aux columns.
+		return base + [
 			("Piezo_0", 0),
 			("Piezo_1", 1),
 			("Temperature_0", 0),
