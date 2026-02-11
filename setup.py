@@ -2,7 +2,7 @@ from setuptools import setup
 
 
 setup(
-    name="rp-ll-gui",
+    name="rpll-client",
     version="0.1.0",
     description="GUI client for rpll RedPitaya laser offset locking",
     py_modules=[
