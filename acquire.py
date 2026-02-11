@@ -87,7 +87,8 @@ class RPConnection:
         self._rxbuf = bytearray()
         self._warned_corruption = False
         self.last_read_status: str = "no_socket"
-        self._server_variant: str = rp_protocol.RP_CAP_LASER_LOCK
+        # Default to the reduced/safer UI until server explicitly advertises laser_lock.
+        self._server_variant: str = rp_protocol.RP_CAP_PHASEMETER
         self._capability_line: Optional[str] = None
         self._log_callback: Optional[Callable[[str], None]] = None
 
@@ -124,7 +125,7 @@ class RPConnection:
         Server capability: 'laser_lock' (full) or 'phasemeter' (readout only).
 
         Set during connect from the capability handshake. Defaults to
-        'laser_lock' if handshake fails or server is older.
+        'phasemeter' if handshake fails or server is older.
         """
         return self._server_variant
 
@@ -173,7 +174,8 @@ class RPConnection:
         client_socket.connect(address)
 
         # Read capability handshake: "RP_CAP:laser_lock\n" or "RP_CAP:phasemeter\n"
-        self._server_variant = rp_protocol.RP_CAP_LASER_LOCK
+        # Default to phasemeter until an explicit capability line advertises laser_lock.
+        self._server_variant = rp_protocol.RP_CAP_PHASEMETER
         self._capability_line = None
         client_socket.settimeout(1.0)
         try:
@@ -224,7 +226,7 @@ class RPConnection:
         self._socket = None
         self._rxbuf = bytearray()
         self._warned_corruption = False
-        self._server_variant = rp_protocol.RP_CAP_LASER_LOCK
+        self._server_variant = rp_protocol.RP_CAP_PHASEMETER
         self._capability_line = None
         self.last_read_status = "no_socket"
         if s is None:

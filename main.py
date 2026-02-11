@@ -78,7 +78,8 @@ class MainWidget(QtWidgets.QWidget):
         super(MainWidget, self).__init__(parent)
         self._layout = None
         self._ip_settings_key = "last_ip"
-        self._last_phasemeter_mode = False
+        # Default startup UI is reduced phasemeter mode until server advertises laser_lock.
+        self._last_phasemeter_mode = True
 
         # --- top bar widgets (initialized in registerLayout) ----------
         self.ip_input = None
@@ -177,11 +178,11 @@ class MainWidget(QtWidgets.QWidget):
         Return the window title base based on server mode.
 
         Phasemeter servers use "RedPitaya Phasemeter"; laser-lock servers use
-        "RedPitaya Laser Lock". Defaults to laser-lock when disconnected.
+        "RedPitaya Laser Lock". Defaults to phasemeter when disconnected.
         """
-        if self._layout and self._layout.is_phasemeter_mode():
-            return "RedPitaya Phasemeter"
-        return "RedPitaya Laser Lock"
+        if self._layout and self._layout.is_connected() and not self._layout.is_phasemeter_mode():
+            return "RedPitaya Laser Lock"
+        return "RedPitaya Phasemeter"
 
     def _set_window_title(self, suffix: str) -> None:
         """Set window title using the current mode base plus suffix."""
@@ -297,7 +298,7 @@ class MainWidget(QtWidgets.QWidget):
             self._layout.set_connection(connection)
             session = self._layout.session
             if connection.capability_line is None:
-                session.log_warning("Capability handshake: none (defaulting to laser_lock until inferred).")
+                session.log_warning("Capability handshake: none (defaulting to phasemeter mode).")
             else:
                 session.log_warning(
                     f"Capability handshake: {connection.capability_line} (variant={connection.server_variant})."
@@ -333,24 +334,23 @@ class MainWidget(QtWidgets.QWidget):
                 cap_line = connection.capability_line
                 inferred_phasemeter = aux.infer_phasemeter_from_snapshot(session.dataset)
                 if cap_line is None:
-                    if inferred_phasemeter and connection.server_variant != rp_protocol.RP_CAP_PHASEMETER:
-                        connection.set_server_variant(rp_protocol.RP_CAP_PHASEMETER)
-                        self._layout.apply_server_variant()
-                        session.log_warning(
-                            "Capability handshake missing; inferred phasemeter mode from frame data."
-                        )
-                    elif not inferred_phasemeter:
-                        session.log_warning(
-                            "Capability handshake missing; defaulting to laser lock mode."
-                        )
+                    session.log_warning(
+                        "Capability handshake missing; staying in phasemeter mode by default."
+                    )
                 elif not cap_line.startswith(rp_protocol.RP_CAP_PREFIX):
                     session.log_warning(
-                        f"Unexpected capability line: {cap_line!r}. Defaulting to laser lock mode."
+                        f"Unexpected capability line: {cap_line!r}. Staying in phasemeter mode by default."
                     )
-                elif connection.server_variant == rp_protocol.RP_CAP_LASER_LOCK and inferred_phasemeter:
-                    session.log_warning(
-                        "Capability handshake reports laser_lock, but frame data looks like phasemeter."
-                    )
+                else:
+                    variant = cap_line[len(rp_protocol.RP_CAP_PREFIX) :].strip()
+                    if variant not in (rp_protocol.RP_CAP_LASER_LOCK, rp_protocol.RP_CAP_PHASEMETER):
+                        session.log_warning(
+                            f"Unknown capability variant: {variant!r}. Staying in phasemeter mode by default."
+                        )
+                    elif connection.server_variant == rp_protocol.RP_CAP_LASER_LOCK and inferred_phasemeter:
+                        session.log_warning(
+                            "Capability handshake reports laser_lock, but frame data looks like phasemeter."
+                        )
                 plot_vm = session.build_plot_view_model()
                 if not session.render_paused:
                     session.gui.updateGUIs(plot_vm)
@@ -407,7 +407,10 @@ class MainWidget(QtWidgets.QWidget):
         if self.health_indicator_widgets is not None and self._layout is not None:
             if self._layout.is_connected():
                 self._last_phasemeter_mode = self._layout.is_phasemeter_mode()
-            is_phasemeter = self._last_phasemeter_mode
+                is_phasemeter = self._last_phasemeter_mode
+            else:
+                # Disconnected defaults to reduced phasemeter mode.
+                is_phasemeter = True
             for key in ("freq_error", "ctrl"):
                 widget = self.health_indicator_widgets.get(key)
                 if widget is not None:

@@ -426,6 +426,9 @@ class MainLayout():
         self.session.widgets.pushButton_reset_a.pressed.connect(self._on_reacquire_press)
         self.session.widgets.pushButton_reset_a.released.connect(self._on_reacquire_release)
 
+        # Apply default (disconnected) UI mode immediately on startup.
+        self.apply_server_variant()
+
     def _on_reacquire_press(self) -> None:
         """Sync beatfreq from dataset (with effective fallback), send reset hold (matches old client)."""
         self.session.widgets.beatfreq = self.session.dataset.beatfreq.copy()
@@ -474,6 +477,8 @@ class MainLayout():
         self.session.disconnect()
         plot_vm = self.session.build_plot_view_model()
         self.session.gui.updateGUIs(plot_vm)
+        # Re-apply mode-specific visibility (defaults to phasemeter when disconnected).
+        self.apply_server_variant()
 
     def set_connection(self, connection) -> None:
         """
@@ -491,7 +496,14 @@ class MainLayout():
 
     def apply_server_variant(self) -> None:
         """Apply visibility and labels based on current server variant."""
-        if self.session.connection is not None and self.session.connection.server_variant == rp_protocol.RP_CAP_PHASEMETER:
+        # Default to reduced phasemeter UI when disconnected; only show full controls
+        # when a connected server explicitly advertises laser_lock.
+        server_variant = (
+            self.session.connection.server_variant
+            if self.session.connection is not None
+            else rp_protocol.RP_CAP_PHASEMETER
+        )
+        if server_variant == rp_protocol.RP_CAP_PHASEMETER:
             self.ctrl_controls_widget.setVisible(False)
             self.session.gui.pltCTRL.setVisible(False)
             self.plots_grid.setRowStretch(4, 0)  # Ctrl row gets no space; others fill vertically
@@ -503,11 +515,10 @@ class MainLayout():
             self.session.gui.set_freq_plot_for_phasemeter(False)
 
     def is_phasemeter_mode(self) -> bool:
-        """Return True when connected to a phasemeter-only server."""
-        return (
-            self.session.connection is not None
-            and self.session.connection.server_variant == rp_protocol.RP_CAP_PHASEMETER
-        )
+        """Return True when in phasemeter mode (default when disconnected)."""
+        if self.session.connection is None:
+            return True
+        return self.session.connection.server_variant == rp_protocol.RP_CAP_PHASEMETER
 
     def capture_default_layout(self) -> None:
         """Capture default splitter sizes and plot visibility once."""
