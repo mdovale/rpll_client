@@ -28,7 +28,7 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "rp-ll-gui=main:main",
+            "rpll-client=main:main",
         ],
     },
     python_requires=">=3.8",

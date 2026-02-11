@@ -15,7 +15,7 @@ From the repo root or from this directory:
 pip install -e .
 ```
 
-This installs the package `rp-ll-gui` and its dependencies: `numpy`, `PySide6`, `pyqtgraph`.
+This installs the package `rp-ll-gui` and its dependencies: `numpy`, `PySide6`, `pyqtgraph`, and provides the `rpll-client` command.
 
 Optional (for running tests):
 
@@ -40,7 +40,7 @@ python main.py -H 10.0.0.2
 If installed via pip, you can also run:
 
 ```bash
-rp-ll-gui -H 10.0.0.2
+rpll-client -H 10.0.0.2
 ```
 
 The GUI connects to the server on port 1001. Use the top bar to enter the IP and click **Connect**. The last used IP is stored and restored on next start.
