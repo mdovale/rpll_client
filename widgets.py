@@ -857,7 +857,7 @@ class WidgetList():
 		Parameters
 		----------
 		output_path : str or None
-			File path to write. If None, use readout/<timestamp>/<timestamp>_data.txt.
+			File path to write. If None, use rpll_client/readout/<timestamp>/<timestamp>_data.txt.
 		channels : iterable or None
 			Channels to include (0 and/or 1).
 		duration_s : int or None
@@ -890,8 +890,8 @@ class WidgetList():
 		if output_path:
 			out_path = Path(output_path)
 		else:
-			repo_root = Path(__file__).resolve().parent.parent
-			out_path = repo_root / "readout" / filetime / f"{filetime}_data.txt"
+			client_root = Path(__file__).resolve().parent
+			out_path = client_root / "readout" / filetime / f"{filetime}_data.txt"
 		out_path.parent.mkdir(parents=True, exist_ok=True)
 		self._data_output_path = str(out_path)
 		columns = ["cnts"]
@@ -930,7 +930,7 @@ class WidgetList():
 		"""
 		Toggle data dumping: start (create file, set path) or stop.
 
-		When turning on: creates readout/<timestamp>/<timestamp>_data.txt, sets
+		When turning on: creates rpll_client/readout/<timestamp>/<timestamp>_data.txt, sets
 		_data_output_path, writes header. When turning off: updates button.
 		No parameters.
 

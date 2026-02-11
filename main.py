@@ -842,8 +842,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
     def _default_data_log_path(self) -> str:
         now = QtCore.QDateTime.currentDateTime().toString("yyyy_MM_dd_HH_mm_ss")
-        repo_root = Path(__file__).resolve().parent.parent
-        return str(repo_root / "readout" / now / f"{now}_data.txt")
+        client_root = Path(__file__).resolve().parent
+        return str(client_root / "readout" / now / f"{now}_data.txt")
 
     def _start_data_logging_dialog(self) -> None:
         default_path = self._settings.value("data_log_path", self._default_data_log_path(), type=str)

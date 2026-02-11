@@ -3,7 +3,7 @@
   "ifreq_1": 10009765,
   "gain_pll_p_0": 12,
   "gain_pll_p_1": 12,
-  "gain_pll_i_0": 3,
+  "gain_pll_i_0": 2,
   "gain_pll_i_1": 3,
   "freq_ref_loop_0": 0,
   "piezo_switch_loop_0": 0,
