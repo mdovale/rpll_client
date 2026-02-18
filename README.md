@@ -15,7 +15,7 @@ From the repo root or from this directory:
 pip install -e .
 ```
 
-This installs the package `rp-ll-gui` and its dependencies: `numpy`, `PySide6`, `pyqtgraph`, and provides the `rpll-client` command.
+This installs the package and its dependencies: `numpy`, `PySide6`, `pyqtgraph`, and provides the `rpll-client` command.
 
 Optional (for running tests):
 
